@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{font:16px system-ui,sans-serif;color:#f1f5ff;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0}
+main{padding:17px;background:#10192e;border:1px solid #334363;border-radius:15px}
+header,.bar,.moves,.modes{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.moves[hidden]{display:none}
+header,.bar{justify-content:space-between}.bar{margin-top:10px}
+h1{font-size:19px;margin:0;letter-spacing:-.025em}.modes{margin-top:12px}
+button,select{font:600 14px system-ui;min-height:43px;padding:7px 12px;border-radius:8px;border:1px solid #536283;background:#202d48;color:#f1f5ff;cursor:pointer;touch-action:manipulation}
+button[aria-pressed="true"],button.primary{background:#79f1d5;color:#112820;border-color:#79f1d5}
+main[data-driver="policy"] button[aria-pressed="true"],main[data-driver="policy"] button.primary{background:#c9baff;color:#231943;border-color:#c9baff}
+button:disabled{opacity:.45;cursor:default}button:focus-visible,select:focus-visible{outline:2px solid #fcd585;outline-offset:2px}
+#track{max-width:100%}#board{width:100%;display:block;margin-top:12px;background:#151f35;border:1px solid #354669;border-radius:9px}
+#readout{margin:10px 0 0;display:flex;gap:7px 14px;align-items:center;flex-wrap:wrap;min-height:34px}
+#readout[hidden]{display:none}.tokens{display:inline-flex;gap:4px}
+.tokens b{display:block;width:24px;text-align:center;border-radius:5px;background:#353159;color:#f0e8ff;font:700 19px ui-monospace,monospace}
+.tokens b:first-child{outline:1px solid #aef5e5;color:#aef5e5}
+#decision{font-size:14px;font-weight:600}#status{font-size:14px;font-weight:650;margin:0;min-height:21px}
+@media(max-width:470px){main{padding:12px}h1{font-size:17px}button,select{padding:6px 9px;font-size:13px}}
+</style>
+</head>
+<body>
+<main>
+  <header><h1>Spike Arcade</h1><select id="track" aria-label="Track"></select></header>
+  <div class="modes" role="group" aria-label="Driver">
+    <button data-mode="you" aria-pressed="true">Play yourself</button>
+    <button data-mode="policy" aria-pressed="false">Watch policy</button>
+  </div>
+  <svg id="board" viewBox="0 0 680 166" role="img" aria-label="Spike track"></svg>
+  <div id="readout" hidden><span id="window" class="tokens"></span><span id="decision"></span></div>
+  <div class="bar">
+    <div class="moves">
+      <div id="manual-controls" class="moves">
+        <button id="walk">Walk</button><button id="jump" class="primary">Jump</button>
+      </div>
+      <div id="policy-controls" class="moves" hidden>
+        <select id="policy" aria-label="Policy">
+          <option value="wide">Five-tile view</option>
+          <option value="short">Short view</option>
+        </select>
+        <button id="play" class="primary">Pause</button><button id="step">Step once</button>
+      </div>
+      <button id="reset">Reset</button>
+    </div>
+    <p id="status" role="status"></p>
+  </div>
+</main>
+<script>
+const demo = __DEMO_JSON__;
+const $ = id => document.getElementById(id);
+const board = $('board');
+const select = $('track');
+const actionName = {x: 'Walk', j: 'Jump'};
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+for (const name of Object.keys(demo.tracks)) select.add(new Option(name, name));
+let mode = 'you', pos = 0, last = null, outcome = '', running = false, timer;
+const track = () => demo.tracks[select.value];
+const model = () => demo.models[$('policy').value];
+const context = at => track().slice(at).padEnd(model().width, '.').slice(0, model().width);
+const prediction = at => model().table[context(at)];
+
+function schedule() {
+  clearTimeout(timer);
+  if (!running) return;
+  timer = setTimeout(() => {
+    if (outcome) startTrack();
+    else step();
+    schedule();
+  }, outcome ? 1450 : 650);
+}
+function startTrack() {
+  pos = 0;
+  last = null;
+  outcome = '';
+  render();
+}
+function reset() {
+  startTrack();
+  schedule();
+}
+function move(action) {
+  if (outcome) return;
+  if (!action) {
+    last = null;
+    outcome = 'No learned action for this view.';
+  } else {
+    const to = pos + demo.moves[action];
+    last = {from: pos, to, action};
+    pos = to;
+    if (to >= track().length) outcome = 'Overshot the finish.';
+    else if (track()[to] === '^') outcome = `Crash at tile ${to + 1}.`;
+    else if (to === track().length - 1) outcome = 'Track cleared!';
+  }
+  render(true);
+}
+function step() { move(prediction(pos)?.action); }
+function render(animate = false) {
+  const tiles = track();
+  const finish = tiles.length - 1;
+  const manual = mode === 'you';
+  const focus = Math.min(pos < tiles.length ? pos : last.from, finish);
+  const size = Math.min(72, 620 / tiles.length);
+  const left = (680 - size * tiles.length) / 2;
+  const center = i => left + size * (i + .5);
+  const floor = 119;
+  const path = last && (last.action === 'j'
+    ? `M${center(last.from)} ${floor - 18} Q${(center(last.from) + center(Math.min(last.to, finish))) / 2} 2 ${center(Math.min(last.to, finish))} ${floor - 18}`
+    : `M${center(last.from)} ${floor - 18} H${center(Math.min(last.to, finish))}`);
+  const width = !manual && model().width;
+  const outline = width && !outcome ? `<rect x="${left + size * pos + 2}" y="${floor - 40}" width="${Math.min(width, tiles.length - pos)*size - 4}" height="71" rx="7" fill="#282a4b" stroke="#9b8ce6" stroke-dasharray="4 4"/>` : '';
+  const cells = [...tiles].map((tile, i) => {
+    const x = center(i), w = Math.min(16, size*.33);
+    const spike = tile === '^' ? `<path d="M${x-w} ${floor} L${x} ${floor-26} L${x+w} ${floor} Z" fill="#ff926a"/>` : '';
+    return `${spike}<text x="${x}" y="${floor+22}" fill="#b9c5dd" font-family="monospace" font-size="13" text-anchor="middle">${i+1}</text>`;
+  }).join('');
+  const avatarX = center(focus), avatarY = floor - 18;
+  const flight = animate && path && !reduceMotion && pos <= finish;
+  const avatar = outcome && outcome !== 'Track cleared!' ? '#ff926a' : manual ? '#79f1d5' : '#c9baff';
+  board.setAttribute('aria-label', `${tiles}. ${manual ? 'You' : 'Policy'} on tile ${focus+1}. ${outcome}`);
+  board.innerHTML = `${outline}<path d="M${left} ${floor} H${680-left}" stroke="#647594" stroke-width="2"/>${cells}
+    <path d="M${center(finish)+size*.32} ${floor} v-55 h-17 v12 h17" fill="none" stroke="#79f1d5" stroke-width="2"/>
+    ${path ? `<path d="${path}" fill="none" stroke="${avatar}" stroke-dasharray="5 5" stroke-width="2" opacity=".75"/>` : ''}
+    <g transform="${flight ? '' : `translate(${avatarX} ${avatarY})`}"><rect x="-10" y="-10" width="20" height="20" rx="4" fill="${avatar}" stroke="#10192e" stroke-width="2"/>
+    <path d="M-4 2 L0 -3 L4 2" fill="none" stroke="#102a2b" stroke-width="1.8"/>
+    ${flight ? `<animateMotion dur=".28s" path="${path}" fill="freeze"/>` : ''}</g>`;
+
+  $('readout').hidden = manual;
+  if (!manual) {
+    const at = outcome && last ? last.from : pos;
+    const key = context(at);
+    const next = prediction(at);
+    $('window').replaceChildren(...[...key].map(token => Object.assign(document.createElement('b'), {textContent: token})));
+    $('window').setAttribute('aria-label', `Model input ${key}`);
+    $('decision').textContent = next ? `${outcome ? 'Last move' : 'Next move'}: ${actionName[next.action]} · ${next.x} walk / ${next.j} jump` : 'Unseen window';
+  }
+  $('status').textContent = outcome ? outcome + (running ? ' Replaying…' : '') : `Tile ${focus+1} / ${tiles.length}`;
+  document.querySelector('main').dataset.driver = mode;
+  $('manual-controls').hidden = !manual;
+  $('policy-controls').hidden = manual;
+  $('walk').disabled = $('jump').disabled = Boolean(outcome);
+  $('play').textContent = running ? 'Pause' : 'Resume';
+  for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+}
+select.onchange = $('policy').onchange = reset;
+for (const button of document.querySelectorAll('[data-mode]')) {
+  button.onclick = () => {
+    if (mode === button.dataset.mode) return;
+    mode = button.dataset.mode;
+    running = mode === 'policy';
+    reset();
+  };
+}
+$('walk').onclick = () => move('x');
+$('jump').onclick = () => move('j');
+$('reset').onclick = reset;
+$('step').onclick = () => {
+  running = false;
+  if (outcome) startTrack();
+  step();
+  schedule();
+};
+$('play').onclick = () => {
+  running = !running;
+  render();
+  schedule();
+};
+reset();
+</script>
+</body>
+</html>

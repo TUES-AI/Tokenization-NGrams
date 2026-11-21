@@ -1,0 +1,9 @@
+# Data license and attribution
+
+**Text:** © the contributors to English Wikipedia and Bulgarian Wikipedia. The passages in the four `*.txt.gz` files are excerpts adapted from Wikipedia and are shared under [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/). The license applies to the passages, not to unrelated repository code.
+
+**Article credits:** [`attribution.tsv.gz`](attribution.tsv.gz) links each corpus row to its source article. `row` is the one-based line number in `<split>.<lang>.txt.gz`. Credit the Wikipedia contributors for that article using its `article_url`, which links to the corresponding contributor history. `page_id` is local to that language edition. See the [Wikimedia Terms of Use, §7](https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use#7._Licensing_of_Content) for attribution and any article-specific notices. Keep this notice and the relevant article links when redistributing passages and indicate further changes.
+
+**Changes:** Wikimedia dump markup was stripped upstream when making the Parquet files. This corpus keeps selected excerpts, normalizes whitespace and Unicode to NFC, and removes some empty parenthetical markup remnants and spaces before punctuation. It omits media and most of each source article.
+
+**Source:** Wikimedia Wikipedia dumps, through the [`wikimedia/wikipedia` dataset card and source revision](https://huggingface.co/datasets/wikimedia/wikipedia/blob/b04c8d1ceb2f5cd4588862100d08de323dccfbaa/README.md). The card lists CC BY-SA 3.0 and GFDL for upstream material. CC BY-SA 3.0 [§4(b)](https://creativecommons.org/licenses/by-sa/3.0/legalcode) permits licensing adaptations under a later version with the same license elements. This distribution uses CC BY-SA, not GFDL. The pinned shards and their checksums are in [`README.md`](README.md) and [`build.py`](build.py).
