@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from data.loader import load_split
-from grader.tokenlab import MAX_CORPUS_BYTES, MAX_DOCUMENTS, load_artifact, score
+from grader.tokenlab import MAX_ARTIFACT_BYTES, MAX_CORPUS_BYTES, MAX_DOCUMENTS, load_artifact, score
 from starter import build
 from starter.corpus import quick_split, rows_by_language
 
@@ -58,6 +58,72 @@ class StarterWorkflowTest(unittest.TestCase):
         self.assertEqual([row["artifact"] for row in rows], [str(baseline), str(counted)])
         self.assertEqual(rows[0]["submitted_bpb"], "-")
         self.assertGreater(float(rows[1]["submitted_bpb"]), 0)
+
+    def test_preflight_accepts_tokenizer_only(self):
+        with tempfile.TemporaryDirectory() as temp:
+            artifact = Path(temp) / "word model.json"
+            artifact.write_text('{"version":1,"tokenizer":{"type":"word","vocab":["cat","Котка"]}}',
+                                encoding="utf-8")
+            result = self.cli("check_submission", artifact)
+        self.assertIn("Valid locally: word tokenizer; no submitted n-gram model", result.stdout)
+        self.assertIn("tiny English and Bulgarian examples", result.stdout)
+        self.assertIn("Nothing was submitted", result.stdout)
+        self.assertEqual(result.stderr, "")
+
+    def test_preflight_validates_all_submitted_counts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            artifact = Path(temp) / "ngram.json"
+            counts = {"en": [[[65], 2], [[65, 32], 2]], "bg": [[[208], 2]]}
+            payload = {"version": 1, "tokenizer": {"type": "byte"}, "ngram": {"order": 2, "counts": counts}}
+            artifact.write_text(json.dumps(payload), encoding="utf-8")
+            result = self.cli("check_submission", artifact)
+            self.assertIn("order-2 submitted n-gram model", result.stdout)
+            self.assertEqual(result.stderr, "")
+
+            # Invalid ID in the final Bulgarian row, even though the smoke text never uses it.
+            counts["bg"].append([[256], 1])
+            artifact.write_text(json.dumps(payload), encoding="utf-8")
+            result = self.cli("check_submission", artifact, check=False)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Invalid artifact: invalid ngram IDs or count", result.stderr)
+        self.assertIn("all from your tokenizer", result.stderr)
+        self.assertIn("docs/FORMAT.md", result.stderr)
+
+    def test_preflight_explains_common_failures_without_echoing_json(self):
+        cases = (
+            (b'{"private-marker":', "invalid UTF-8 artifact JSON", "Check quotes and commas"),
+            (b'{"version":1,"private-marker":"example"}', "missing or unexpected artifact fields",
+             "use version and tokenizer"),
+            (b'{"version":1,"tokenizer":{"type":"private-marker"}}', "unknown tokenizer type", '"bpe"'),
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            artifact = Path(temp) / "model.json"
+            for raw, error, hint in cases:
+                with self.subTest(error=error):
+                    artifact.write_bytes(raw)
+                    result = self.cli("check_submission", artifact, check=False)
+                    self.assertEqual(result.returncode, 1)
+                    self.assertEqual(result.stdout, "")
+                    self.assertIn(f"Invalid artifact: {error}", result.stderr)
+                    self.assertIn(hint, result.stderr)
+                    self.assertNotIn("private-marker", result.stderr)
+            missing = self.cli("check_submission", Path(temp) / "missing.json", check=False)
+            self.assertEqual(missing.returncode, 1)
+            self.assertIn("Check the path and permissions", missing.stderr)
+
+    def test_preflight_enforces_exact_file_size_limit(self):
+        raw = b'{"version":1,"tokenizer":{"type":"byte"}}'
+        with tempfile.TemporaryDirectory() as temp:
+            artifact = Path(temp) / "model.json"
+            artifact.write_bytes(raw.ljust(MAX_ARTIFACT_BYTES, b" "))
+            self.assertIn("Valid locally", self.cli("check_submission", artifact).stdout)
+            with artifact.open("ab") as handle:
+                handle.write(b" ")
+            result = self.cli("check_submission", artifact, check=False)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("no larger than 6 MiB", result.stderr)
 
     def test_all_tokenizers_can_be_reused_in_a_paired_count_artifact(self):
         # Fixture results for the student's TODOs, not trainer implementations.
