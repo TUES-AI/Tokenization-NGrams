@@ -115,32 +115,53 @@ def build(paths, out):
             selections[split, lang] = sorted(chosen, key=lambda rec: (rank("order", lang, rec[0]), rec[0]))
             start += count
 
+    write_corpus(out, selections)
+
+
+def file_record(path, payload):
+    gzip_write(path, payload)
+    return {
+        "utf8_bytes": len(payload), "sha256_plaintext": sha256(payload),
+        "sha256_gzip": digest(path), "gzip_bytes": path.stat().st_size,
+    }
+
+
+def write_corpus(out, selections):
     out.mkdir(parents=True, exist_ok=True)
     attr = io.StringIO(newline="")
     writer = csv.writer(attr, delimiter="\t", lineterminator="\n")
     writer.writerow(AT_COLUMNS)
-    manifest = {}
+    by_split = {}
     for (split, lang), chosen in sorted(selections.items()):
-        rows = []
+        rows = by_split.setdefault(split, {})[lang] = []
         for number, (page_id, title, url, row) in enumerate(chosen, 1):
             writer.writerow((split, lang, number, page_id, title, url))
             rows.append(row)
-        filename = f"{split}.{lang}.txt.gz"
-        payload = ("\n".join(rows) + "\n").encode("utf-8")
-        gzip_write(out / filename, payload)
+
+    manifest = {}
+    for split, groups in by_split.items():
+        filename = f"{split}.jsonl.gz"
+        pairs = zip(groups["bg"], groups["en"], strict=True)
+        payload = "".join(
+            json.dumps({"lang": lang, "text": row}, ensure_ascii=False, separators=(",", ":")) + "\n"
+            for pair in pairs for lang, row in zip(("bg", "en"), pair)
+        ).encode("utf-8")
         manifest[filename] = {
-            "articles": len(rows), "rows": len(rows), "utf8_bytes": len(payload),
-            "mean_code_points_per_row": round(sum(map(len, rows)) / len(rows), 2),
-            "sha256_plaintext": sha256(payload), "sha256_gzip": digest(out / filename),
-            "gzip_bytes": (out / filename).stat().st_size,
+            **file_record(out / filename, payload),
+            "rows": sum(map(len, groups.values())), "by_language": {},
         }
-    payload = attr.getvalue().encode("utf-8")
-    gzip_write(out / "attribution.tsv.gz", payload)
-    manifest["attribution.tsv.gz"] = {
+        for lang, rows in groups.items():
+            ungrouped = ("\n".join(rows) + "\n").encode("utf-8")
+            manifest[filename]["by_language"][lang] = {
+                "rows": len(rows), "utf8_bytes": len(ungrouped),
+                "mean_code_points_per_row": round(sum(map(len, rows)) / len(rows), 2),
+                "sha256_plaintext": sha256(ungrouped),
+            }
+
+    filename = "attribution.tsv.gz"
+    manifest[filename] = {
+        **file_record(out / filename, attr.getvalue().encode("utf-8")),
         "rows_excluding_header": sum(map(len, selections.values())),
-        "utf8_bytes": len(payload), "sha256_plaintext": sha256(payload),
-        "sha256_gzip": digest(out / "attribution.tsv.gz"),
-        "gzip_bytes": (out / "attribution.tsv.gz").stat().st_size,
     }
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 

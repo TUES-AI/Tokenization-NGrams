@@ -6,40 +6,46 @@
     "sha256_plaintext": "964a5231d65fcd0e618cd047972f58bc402a02b6bd719e66e2ddb8eaf77394a4",
     "utf8_bytes": 2521430
   },
-  "train.bg.txt.gz": {
-    "articles": 8190,
-    "gzip_bytes": 1012560,
-    "mean_code_points_per_row": 235.24,
-    "rows": 8190,
-    "sha256_gzip": "a3bca158a7cb8d949615b5e2d55f7e5b12cb67f39620b07643a84572e12a3117",
-    "sha256_plaintext": "c8d997867d4064e462ab038952b5598fc72c0fbd90007ae5b692ada97edb0da6",
-    "utf8_bytes": 3460902
+  "train.jsonl.gz": {
+    "by_language": {
+      "bg": {
+        "mean_code_points_per_row": 235.24,
+        "rows": 8190,
+        "sha256_plaintext": "c8d997867d4064e462ab038952b5598fc72c0fbd90007ae5b692ada97edb0da6",
+        "utf8_bytes": 3460902
+      },
+      "en": {
+        "mean_code_points_per_row": 236.73,
+        "rows": 8190,
+        "sha256_plaintext": "bc1ab0108d09b62932840072f0554f983362f6e81300e4484f6d33ea5f6a13fb",
+        "utf8_bytes": 1951274
+      }
+    },
+    "gzip_bytes": 2128823,
+    "rows": 16380,
+    "sha256_gzip": "11fff9562a815317f955ad8a01a648c699925f6c6e0909a04db9030ab22bacd1",
+    "sha256_plaintext": "8e88f8b65792b1724c923c9b261575b9478f315b6f60aafa6ab10cdef5c31e9e",
+    "utf8_bytes": 5791963
   },
-  "train.en.txt.gz": {
-    "articles": 8190,
-    "gzip_bytes": 846900,
-    "mean_code_points_per_row": 236.73,
-    "rows": 8190,
-    "sha256_gzip": "219072420295867204a72b3fbc6d012b2dd0a9c924c4821876048f69da8e4cba",
-    "sha256_plaintext": "bc1ab0108d09b62932840072f0554f983362f6e81300e4484f6d33ea5f6a13fb",
-    "utf8_bytes": 1951274
-  },
-  "validation.bg.txt.gz": {
-    "articles": 1530,
-    "gzip_bytes": 188976,
-    "mean_code_points_per_row": 234.46,
-    "rows": 1530,
-    "sha256_gzip": "9bc041f1dd73c29517b20f79abbca1ca1f56cc62cd3a450282385cf1f4e42f25",
-    "sha256_plaintext": "28a0f8a0e80015687584e52fa5abf4f5c4ac73875af26599a0555e37711f5630",
-    "utf8_bytes": 644314
-  },
-  "validation.en.txt.gz": {
-    "articles": 1530,
-    "gzip_bytes": 159624,
-    "mean_code_points_per_row": 236.88,
-    "rows": 1530,
-    "sha256_gzip": "0212af0285666f3cba2d9f4a3571fd9380e37a939cecd21c65e5e04e7c5e9bdb",
-    "sha256_plaintext": "9f795334cd12f235adfa962696dbba9dae807a3cf54533802c8e1b8daf31fc17",
-    "utf8_bytes": 364892
+  "validation.jsonl.gz": {
+    "by_language": {
+      "bg": {
+        "mean_code_points_per_row": 234.46,
+        "rows": 1530,
+        "sha256_plaintext": "28a0f8a0e80015687584e52fa5abf4f5c4ac73875af26599a0555e37711f5630",
+        "utf8_bytes": 644314
+      },
+      "en": {
+        "mean_code_points_per_row": 236.88,
+        "rows": 1530,
+        "sha256_plaintext": "9f795334cd12f235adfa962696dbba9dae807a3cf54533802c8e1b8daf31fc17",
+        "utf8_bytes": 364892
+      }
+    },
+    "gzip_bytes": 397708,
+    "rows": 3060,
+    "sha256_gzip": "5604d69f8223c9925dfd85760d475ab65bbcc1f1840e49f085d50df529725cc9",
+    "sha256_plaintext": "ba3e445fdfccae0511f38a83142328780e538f769e8b80355a0af5120514690e",
+    "utf8_bytes": 1080159
   }
 }
