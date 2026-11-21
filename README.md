@@ -4,7 +4,7 @@
 
 Направи три токенизатора за един и същ корпус от българска и английска Wikipedia. Сравни колко място заемат токените и колко добре модел предсказва следващия токен. После обучи свой n-грамов модел и го сравни с референтния.
 
-[Предаване и класации](https://tuesai.org/homework/tokenization-ngrams) · [Формат на JSON](docs/FORMAT.md) · [Тетрадки от часа](class/README.md) · [Упражнение: генериране](docs/SAMPLING.md)
+[Предаване и класации](https://tuesai.org/homework/tokenization-ngrams) · [Провери файл и разбери грешка](docs/SUBMISSION.md) · [Формат на JSON](docs/FORMAT.md) · [Тетрадки от часа](class/README.md) · [Упражнение: генериране](docs/SAMPLING.md)
 
 ## 1. Пусни базовия вариант
 
