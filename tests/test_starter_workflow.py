@@ -9,9 +9,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from data.loader import load_split
 from grader.tokenlab import MAX_CORPUS_BYTES, MAX_DOCUMENTS, load_artifact, score
 from starter import build
-from starter.corpus import quick_split
+from starter.corpus import quick_split, rows_by_language
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -125,6 +126,17 @@ class StarterWorkflowTest(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("--rows must be positive", result.stderr)
             self.assertFalse(artifact.exists())
+
+    def test_starter_uses_original_language_prefixes(self):
+        for split in ('train', 'validation'):
+            with self.subTest(split=split):
+                published = load_split(split)
+                expected = {lang: docs[:32] for lang, docs in published.items()}
+                self.assertEqual(rows_by_language(split, 32), expected)
+                self.assertEqual(quick_split(split, 32), expected)
+                first_pair = sum(len(docs[0].encode('utf-8')) for docs in published.values())
+                with patch('starter.corpus.MAX_CORPUS_BYTES', first_pair):
+                    self.assertEqual(quick_split(split, 32), {lang: docs[:1] for lang, docs in published.items()})
 
     def test_quick_split_stays_within_scorer_budget(self):
         for split in ("train", "validation"):

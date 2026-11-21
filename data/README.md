@@ -2,23 +2,22 @@
 
 One passage per line, one passage per article. Each split has the same number of rows in both languages. Train and validation share no article IDs within either language edition and no duplicate passages after case, punctuation and whitespace normalization across both editions.
 
-| Split | Rows per language | Bulgarian | English |
-| --- | ---: | --- | --- |
-| Train | 8,190 | [`train.bg.txt.gz`](train.bg.txt.gz) | [`train.en.txt.gz`](train.en.txt.gz) |
-| Validation | 1,530 | [`validation.bg.txt.gz`](validation.bg.txt.gz) | [`validation.en.txt.gz`](validation.en.txt.gz) |
+| Split | Download | Rows | Rows per language |
+| --- | --- | ---: | ---: |
+| Train | [`train.jsonl.gz`](train.jsonl.gz) | 16,380 | 8,190 |
+| Validation | [`validation.jsonl.gz`](validation.jsonl.gz) | 3,060 | 1,530 |
 
-All four files total about 2.2 MB compressed and 6.4 MB as UTF-8 text. These are sampled encyclopedia passages, not a representative sample of either language. Topic or translated-content overlap is possible. There is no tokenizer preprocessing to apply before choosing your own approach.
+Both files together are about 2.5 MB compressed and 6.9 MB as UTF-8 JSONL. Each LF-terminated line is a JSON object with exactly `lang` (`bg` or `en`) and `text` (the passage). Rows alternate Bulgarian, English, starting with Bulgarian in each split. The migration preserves the texts, split membership and order within each language. These are sampled encyclopedia passages, not a representative sample of either language. Topic or translated-content overlap is possible. There is no tokenizer preprocessing to apply before choosing your own approach.
 
 ```python
-from data.loader import iter_texts, load_split, load_texts
+from data.loader import iter_rows, load_rows
 
-bg_train = load_texts("train", "bg")  # list[str]
-validation = load_split("validation")  # {"bg": [...], "en": [...]}
-for text in iter_texts("train", "en"):
-    pass  # stream one passage at a time
+for row in iter_rows("train"):
+    lang, text = row["lang"], row["text"]  # stream one record at a time
+validation = load_rows("validation")  # list of records in RAM, in file order
 ```
 
-Run from the repository root. The loader needs no third-party packages. The four gzip files have no header or language tags; line endings are LF. See [data license and credits](DATA_LICENSE.md) and [the artifact manifest](manifest.json) for per-file counts, sizes and SHA-256 hashes.
+Run from the repository root. The loader needs no third-party packages. See the [license and article credits](DATA_LICENSE.md) and [manifest](manifest.json). The previous per-language archives are temporarily retained for older download links; use only the two JSONL files above for the assignment.
 
 ## Rebuild the distributed files
 
@@ -36,6 +35,6 @@ uv run --no-project --python 3.12.13 --with pyarrow==22.0.0 python -B data/build
     --source-dir wiki-source --output-dir rebuilt-data
 ```
 
-The builder verifies the SHA-256 of each input shard. It finds sentence-like passages in the first eight nonempty paragraphs, normalizes text, drops obvious markup and link/contact artifacts, and checks that most letters match the expected script. It picks one passage per article by hash, deduplicates across both languages, and ranks articles by hash within three length bands (120–199, 200–279, 280–359 Unicode code points). Per language and band, the first 2,730 articles go to train and the next 510 to validation. A separate hash fixes row order. Attribution uses those exact row numbers.
+The builder verifies the SHA-256 of each input shard. It finds sentence-like passages in the first eight nonempty paragraphs, normalizes text, drops obvious markup and link/contact artifacts, and checks that most letters match the expected script. It picks one passage per article by hash, deduplicates across both languages, and ranks articles by hash within three length bands (120–199, 200–279, 280–359 Unicode code points). Per language and band, the first 2,730 articles go to train and the next 510 to validation. A separate hash fixes the order within each language before alternating rows. Attribution counts rows within each split and language, not across the combined file.
 
-[`manifest.json`](manifest.json) contains hashes of the gzip files and their uncompressed UTF-8 bytes. The canonical build used CPython 3.12.13, PyArrow 22.0.0, Unicode 15.0.0 and zlib 1.3.2. Gzip has no embedded filename or timestamp; if a different zlib version emits different compressed bytes, compare the uncompressed hashes.
+[`manifest.json`](manifest.json) records counts, byte sizes and SHA-256 hashes for the gzip files and their decompressed UTF-8 bytes. To check a split's `by_language` hash, filter by the chosen `lang`, take the decoded `text` of each matching row in order, and append one LF to each text before encoding to UTF-8. These hashes match the original corpus partitioned by language. The canonical build used CPython 3.12.13, PyArrow 22.0.0, Unicode 15.0.0 and zlib 1.3.2. Gzip has no embedded filename or timestamp; if a different zlib version emits different compressed bytes, compare the uncompressed hashes.

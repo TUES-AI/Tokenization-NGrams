@@ -19,20 +19,34 @@ python -m starter.evaluate --examples output/byte.json
 
 ### Зареди корпуса
 
-В `data/` има четири gzip файла (`train` и `validation` по `bg` и `en`), по един откъс на ред. Loader-ът ги чете като UTF-8 направо от архива. В Python, стартиран от главната папка:
+| Дял | Файл | Откъси общо | На език |
+|---|---|---:|---:|
+| Обучение | [`train.jsonl.gz`](data/train.jsonl.gz) | 16 380 | 8 190 |
+| Проверка | [`validation.jsonl.gz`](data/validation.jsonl.gz) | 3 060 | 1 530 |
+
+Всеки ред е UTF-8 JSON с две полета: `lang` (`bg` или `en`) и `text` (откъсът). Българските и английските редове се редуват. От главната папка можеш да прочетеш първите два реда направо от архива:
 
 ```python
+import gzip
+import json
 from itertools import islice
-from data.loader import iter_texts, load_split
 
-# Първите 8 откъса от всеки език, без да четем целия train.
-train = {lang: list(islice(iter_texts("train", lang), 8)) for lang in ("bg", "en")}
-print(train["bg"][0], train["en"][0], sep="\n\n")
-
-validation = load_split("validation")  # речник с отделни списъци за bg и en
+with gzip.open("data/train.jsonl.gz", "rt", encoding="utf-8") as source:
+    for line in islice(source, 2):
+        row = json.loads(line)
+        print(row["lang"], row["text"])
 ```
 
-Корпусът заема около 2.2 MB на диска. Виж [описанието и лиценза](data/README.md). Обучавай само върху `train`. Ползвай `validation` за сравнение и избор на настройки. Сайтът оценява върху отделен набор.
+За да заредиш и двата дяла в паметта, групирани по език:
+
+```python
+from data.loader import load_split
+
+train = load_split("train")           # {"bg": [...], "en": [...]}
+validation = load_split("validation")
+```
+
+Обучавай само върху `train`. Ползвай `validation` за сравнение и избор на настройки. Сайтът оценява върху отделен набор. Виж [описанието и лиценза на корпуса](data/README.md).
 
 ## 2. Сравни и предай три токенизатора
 
