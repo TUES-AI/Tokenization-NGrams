@@ -81,7 +81,7 @@ python -m starter.build bpe --rows 32 --order 3 --tokenizer-from output/bpe.json
 python -m starter.evaluate --rows 32 output/byte-ngram.json output/word-ngram.json output/bpe-ngram.json
 ```
 
-`--tokenizer-from` запазва същите ID от първия JSON. Така при смяна на броячите сравняваш една и съща токенизация. Качи трите нови `*-ngram.json` файла поотделно. Ако искаш, повтори с друг `--order` (1–5) и различно име на файла.
+`--tokenizer-from` запазва същите ID от първия JSON. Качи трите нови `*-ngram.json` файла поотделно. Локално референтният модел също брои до ред 3 върху същите 32 обучаващи откъса на език. Ако броячите ти са верни, `submitted_accuracy` и `submitted_bpb` трябва да съвпадат с `reference_accuracy` и `reference_bpb` за всеки от трите токенизатора. При разлика първо провери дали броиш и по-късите n-грами и дали спираш на границата на всеки откъс.
 
 Попълни от редовете `overall` на локалната проверка. Сравни и редовете `bg` и `en` за една разлика между двата езика.
 
@@ -91,6 +91,15 @@ python -m starter.evaluate --rows 32 output/byte-ngram.json output/word-ngram.js
 | Word | … / … | … / … | … / … |
 | BPE | … / … | … / … | … / … |
 
+**Втори опит:** За един от токенизаторите промени само реда от 3 на 2. Например за byte:
+
+```sh
+python -m starter.build byte --rows 32 --order 2 --tokenizer-from output/byte.json --out output/byte-bigram.json
+python -m starter.evaluate --rows 32 output/byte-ngram.json output/byte-bigram.json
+```
+
+Запиши как се променят точността и BPB, когато моделът вижда най-много един предишен токен вместо два. Ако някоя метрика остане същата, предложи обяснение. Този опит остава в локалния отчет.
+
 ## 4. Генерирай и обясни резултатите
 
 Направи [упражнението с greedy и претеглено теглене](docs/SAMPLING.md). Запази кратък отчет за себе си с няколко извадки, метриките и какво според теб обяснява разликите.
@@ -99,3 +108,5 @@ python -m starter.evaluate --rows 32 output/byte-ngram.json output/word-ngram.js
 
 - [Let’s build the GPT Tokenizer](https://www.youtube.com/watch?v=zduSFxRajkE) · байтове, сливане на двойки и BPE
 - [The spelled-out intro to language modeling: building makemore](https://www.youtube.com/watch?v=PaCmpygFfXo) · броене, вероятности и генериране с биграмен модел
+
+[Условия за ползване на учебните материали](USE.md)

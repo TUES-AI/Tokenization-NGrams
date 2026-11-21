@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from grader.tokenlab import MAX_CORPUS_BYTES, MAX_DOCUMENTS, load_artifact
+from grader.tokenlab import MAX_CORPUS_BYTES, MAX_DOCUMENTS, load_artifact, score
 from starter import build
 from starter.corpus import quick_split
 
@@ -101,6 +101,22 @@ class StarterWorkflowTest(unittest.TestCase):
                 self.assertEqual(first["total_bits"], second["total_bits"])
                 self.assertEqual(first["submitted_bpb"], "-")
                 self.assertGreater(float(second["submitted_bpb"]), 0)
+
+    def test_hand_counted_trigram_parity_and_bigram_comparison(self):
+        # Count rows by hand for the two tiny training documents, not via a trainer.
+        train = {"en": ["aba"], "bg": ["а"]}
+        validation = {"en": ["aba"], "bg": ["б"]}
+        en = [[[97], 2], [[98], 1], [[97, 98], 1], [[98, 97], 1]]
+        bg = [[[208], 1], [[176], 1], [[208, 176], 1]]
+        payload = {"version": 1, "tokenizer": {"type": "byte"},
+                   "ngram": {"order": 3, "counts": {"en": en + [[[97, 98, 97], 1]], "bg": bg}}}
+        trigram = score(payload, train, validation)
+        payload["ngram"] = {"order": 2, "counts": {"en": en, "bg": bg}}
+        bigram = score(payload, train, validation)
+        for scope in ("overall", "en", "bg"):
+            for metric in ("accuracy", "bpb"):
+                self.assertEqual(trigram[scope][f"submitted_{metric}"], trigram[scope][f"reference_{metric}"])
+        self.assertNotEqual(trigram["overall"]["submitted_bpb"], bigram["overall"]["submitted_bpb"])
 
     def test_invalid_build_does_not_write_an_artifact(self):
         with tempfile.TemporaryDirectory() as temp:

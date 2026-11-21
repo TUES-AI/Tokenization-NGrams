@@ -5,7 +5,7 @@
 | Тетрадка | Опитай |
 |---|---|
 | [BPE](tokenization/bpe.ipynb) | В `banana` намери двете двойки `a` + `n`. Проследи защо и двете получават ID 256. Смени броя сливания на 0 и провери дали декодираният текст се променя. |
-| [Малък триграмен модел](ngram/ngram.ipynb) | След `the cat` има два пъти `sat` и веднъж `slept`. Коя дума винаги избира greedy? Може ли sampling да избере другата? |
+| [Малък триграмен модел](ngram/ngram.ipynb) | **Поправка към схемата:** след `the cat` има два пъти `sat`, веднъж `slept` и веднъж `<end>` (край на изречението). Вероятностите са 1/2, 1/4 и 1/4. Кой избор винаги би направил greedy и кои може да изтегли тетрадката? |
 | [5-грамен модел върху Sherlock Holmes](ngram/five_gram.ipynb) | Проследи как моделът скъсява непозната поредица от четири токена. Последната клетка показва стара грешка от часа; изпълни наново целия notebook. |
 | [Spike School](ngram/spike_school.ipynb) | Избери **Watch policy → Pause → Step once**. На пистата **Double jump** сравни **Short view** и **Five-tile view**. Какво вижда моделът, преди да избере ход? Контролите работят в Jupyter, не в GitHub. |
 
@@ -15,6 +15,6 @@
 
 ### Текстовете за Sherlock Holmes
 
-Arthur Conan Doyle: [The Adventures of Sherlock Holmes](https://www.gutenberg.org/ebooks/1661) и [The Memoirs of Sherlock Holmes](https://www.gutenberg.org/ebooks/834) за обучение, [The Return of Sherlock Holmes](https://www.gutenberg.org/ebooks/108) за проверка. Запазените файлове са преформатирани: абзаците са събрани и приблизително разделени на изречения. Оригиналните издания са достъпни безплатно на посочените връзки.
+Arthur Conan Doyle: [The Adventures of Sherlock Holmes](https://www.gutenberg.org/ebooks/1661) и [The Memoirs of Sherlock Holmes](https://www.gutenberg.org/ebooks/834) за обучение, [The Return of Sherlock Holmes](https://www.gutenberg.org/ebooks/108) за проверка. Запазените файлове съдържат преформатирани откъси от прозата на Doyle, която е обществено достояние в САЩ. Абзаците са събрани и приблизително разделени на изречения. Връзките сочат към безплатните изходни издания на Project Gutenberg; за тях важи следното известие. Извън САЩ провери приложимите местни правила.
 
 > This eBook is for the use of anyone anywhere in the United States and most other parts of the world at no cost and with almost no restrictions whatsoever. You may copy it, give it away or re-use it under the terms of the [Project Gutenberg License](notices/PROJECT-GUTENBERG.txt) included with this eBook or online at [www.gutenberg.org](https://www.gutenberg.org/license). If you are not located in the United States, you will have to check the laws of the country where you are located before using this eBook.
